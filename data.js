@@ -9,36 +9,35 @@ const DATA_TESTS = [
 				id: 1,
 				label: 'Step 1',
 				commands: [
-					'command 1.1',
-					'command 1.2',
-					'command 1.3',
+					'echo "command 1.1"',
+					'echo "command 1.2"',
+					'echo "command 1.3"',
 				]
 			},
 			{
 				id: 2,
 				label: 'Step 2',
 				commands: [
-					'command 2.1',
-					'command 2.2',
-					'command 2.3',
-					'command 2.4',
+					'echo "command 2.1"',
 				]
 			},
 			{
 				id: 3,
 				label: 'Step 3',
 				commands: [
-					'command 3.1',
-					'command 3.2',
+					'echo "command 3.1"',
+					'echo "command 3.2"',
 				]
 			},
 			{
 				id: 4,
 				label: 'Step 4',
 				commands: [
-					'command 1',
-					'command 2',
-					'command 3',
+					'echo "command 4.1"',
+					'echo "command 4.2"',
+					'echo "command 4.3"',
+					'echo "command 4.4"',
+					'echo "command 4.5"',
 				]
 			},
 		]

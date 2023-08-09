@@ -1,7 +1,10 @@
 const fileSystem = require('fs');
 const path = require('path');
 
+const { exec } = require('child_process');
+
 const WebSocket = require('ws');
+const connectedClients = new Set();
 let websocketInstance = null;
 let logFileWatcher = null;
 
@@ -34,30 +37,36 @@ exports.startTest = (req, res, next) => {
 		return;
 	}
 
-	const {status, message} = startDIPTest(DIPTest);
+	const {status, message} = listenDIPTest(DIPTest);
 	if(!status) {
-		res.status(500).json({ message: message });
+		res.status(500).json({message: message});
 	}else{
-		res.status(200).json({ message: message })
+		res.status(200).json({message: message})
 	}
+
+	// TODO: continue with commands execution = executeTestCommands(DIPTest);
+	// TODO: find a way to get commands execution logs
 }
+
+
+
 exports.stopTest = (req, res, next) => {
-	console.log('stopTest');
+	console.log('try to stop test "'+req.params.id+'"');
+	stopWebSocketServer().then((result) => {
 
-	// const id = req.params.id;
-	// const test = getTestById(id);
-	// if(!test) {
-	// 	res.status(404).json({ message: 'test not found' });
-	// 	return;
-	// }
-
-	const {status, message} = stopWebSocketServer();
-	if(status) {
-		res.status(200).json({ message: message })
-	}else{
-		res.status(500).json({ message: message });
-	}
+		if(result.status) {
+			console.log('stop server 200 : '+result.message)
+			res.status(200).json({message: result.message})
+		}else{
+			console.log('stop server 500 : '+result.message)
+			res.status(500).json({message: result.message});
+		}
+	}).catch((error) => {
+		console.log('stopWebSocketServer', error);
+		res.status(500).json(error);
+	});
 }
+
 
 // FUNCTIONS
 function getTestById(id) {
@@ -77,7 +86,7 @@ function getTestById(id) {
 }
 
 
-function startDIPTest(DIPTest) {
+function listenDIPTest(DIPTest) {
 	console.log('start DIP Test ('+DIPTest.id+')');
 
 	if(!DIPTest.logFile) {
@@ -99,17 +108,16 @@ function startDIPTest(DIPTest) {
 	}
 	websocketInstance.on('connection', (websocket) => {
 		console.log('new WebSocket connection established');
+		connectedClients.add(websocket);
 		
 		// READ LOG FILE
 		const logFilePath = path.join(__dirname, '/test/'+DIPTest.logFile);
 		const sendLogUpdates = () => {
 			fileSystem.readFile(logFilePath, 'utf8', (err, data) => {
-				console.log('reading log file');
 				if (err) {
 					console.error('Error reading log file:', err);
 					return;
 				}
-				console.log('send log file data')
 				websocket.send(JSON.stringify(data)); // Envoie les données du fichier de log au client WebSocket
 			});
 		};
@@ -124,36 +132,48 @@ function startDIPTest(DIPTest) {
 
 		// WEBSOCKET EVENTS
 		websocket.on('close', () => {
-			console.log('WebSocket connection closed');
-			if(logFileWatcher)
+			connectedClients.delete(websocket);
+			if(logFileWatcher){
 				logFileWatcher.close();
+				logFileWatcher = null;
+				console.log('logFileWatcher closed')
+			}
+			websocket.close();
+			console.log('WebSocket connection closed');
 		});
 
 		websocket.on('error', console.error);
-
-		// websocket.on('open', (data) => {
-		// 	console.log('WebSocket connection opened', data);
-		// });
 		
 	});
-	return {status: true, message: 'startDIPTest ('+DIPTest.id+')'};
+	return {status: true, message: 'listenDIPTest ('+DIPTest.id+')'};
 }
-function stopWebSocketServer() {
-	if(websocketInstance) {
-		websocketInstance.close();
-		websocketInstance = null;
-		let message = 'WebSocket server stoped';
-		
-		if(logFileWatcher){
-			logFileWatcher.close();
-			logFileWatcher = null;
-			message += ' and logFileWatcher stoped';
-		}
-
-		return {status: true, message: message};
-	}else{
-		return {status: true, message: 'No WebSocket server to stop'};
+async function stopWebSocketServer() {
+	if(!websocketInstance) {
+		console.log('WebSocket instance not started');
+		return {status: false, message: 'WebSocket instance not started'};
 	}
+
+	await websocketInstance.clients.forEach((socket) => {
+		// Soft close
+		socket.close();
+		process.nextTick(() => {
+			if ([socket.OPEN, socket.CLOSING].includes(socket.readyState)) {
+				// Socket still hangs, hard close
+				socket.terminate();
+			}
+		});
+	});
+
+	websocketInstance.close();
+	websocketInstance = null;
+	let message = 'WebSocket server stoped';
+
+	if(logFileWatcher){
+		logFileWatcher.close();
+		logFileWatcher = null;
+		message += ' and logFileWatcher stoped';
+	}
+	return {status: true, message: message};
 }
 
 function InstanciateWebSocketServer() {
@@ -171,4 +191,51 @@ function InstanciateWebSocketServer() {
 		console.log('WebSocket server started');
 		return {status: true, message: 'WebSocket server started'}
 	}
+}
+
+
+async function executeTestCommands(DIPTest) {
+	if(!DIPTest) {
+		console.error('DIPTest is undefined')
+		return {status: false, message: 'DIPTest is undefined'};
+	}
+
+	const commands = DIPTest.commands;
+	if(!commands) {
+		console.error('commands is undefined')
+		return {status: false, message: 'commands is undefined'};
+	}
+
+	if(commands.length === 0) {
+		console.error('commands is empty')
+		return {status: false, message: 'commands is empty'};
+	}
+
+	await executeCommands(commands);
+}
+async function executeCommands(commands) {
+
+    for (const command of commands) {
+        try {
+            const { stdout, stderr } = await executeCommand(command);
+            console.log('Sortie de la commande :');
+            console.log(stdout);
+            if (stderr) {
+                console.error(`Erreur de sortie standard d'erreur : ${stderr}`);
+            }
+        } catch (error) {
+            console.error(`Erreur lors de l'exécution de la commande "${command}" : ${error}`);
+        }
+    }
+}
+function executeCommand(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve({ stdout, stderr });
+            }
+        });
+    });
 }
