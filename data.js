@@ -3,7 +3,7 @@ const DATA_TESTS = [
 		id: 'test-1', 
 		label: 'TEST 1',
 		image: 'assets/dip.png',
-		// logFile: 'test-1.log',
+		logFile: 'test1.log',
 		steps: [
 			{
 				id: 1,
