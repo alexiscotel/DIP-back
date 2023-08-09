@@ -1,10 +1,13 @@
 const DATA_TESTS = require("./data");
-
+const minRange = 1;
+const maxRange = 3;
 
 exports.getTests = (req, res, next) => {
     console.log('getTests');
-	console.log(DATA_TESTS);
-    res.status(200).json(DATA_TESTS)
+
+	setTimeout(() => {
+		res.status(200).json(DATA_TESTS)
+    }, (getRandomNumber(minRange, maxRange)*1000));
 }
 exports.getTest = (req, res, next) => {
 	console.log('getTestById', req.params.id);
@@ -15,7 +18,9 @@ exports.getTest = (req, res, next) => {
 	if(!test) {
 		res.status(404).json({ message: 'test not found' });
 	}else{
-		res.status(200).json(test)
+		setTimeout(() => {
+			res.status(200).json(test)
+		}, (getRandomNumber(minRange, maxRange)*1000));
 	}
 }
 
@@ -41,23 +46,23 @@ exports.getTestLogById = (req, res, next) => {
 }
 
 
-exports.selectTest = (req, res, next) => {
-	console.log('selectTest', req.body);
+// exports.selectTest = (req, res, next) => {
+// 	console.log('selectTest', req.body);
 
-	const id = req.body.id;
-	const test = getTestById(id);
-	if(!test) {
-		res.status(404).json({ message: 'test not found' });
-		return;
-	}
+// 	const id = req.body.id;
+// 	const test = getTestById(id);
+// 	if(!test) {
+// 		res.status(404).json({ message: 'test not found' });
+// 		return;
+// 	}
 
-	// TODO: set selected Test if needed
+// 	// TODO: set selected Test if needed
 
-    res.status(200).json({ message: 'selectTest' })
-}
+//     res.status(200).json({ message: 'selectTest' })
+// }
 
 exports.startTest = (req, res, next) => {
-	console.log('startTest');
+	console.log('startTest', req.body);
 
 	const id = req.body.id;
 	const test = getTestById(id);
@@ -66,7 +71,9 @@ exports.startTest = (req, res, next) => {
 		return;
 	}
 
-    res.status(200).json({ message: 'startTest' })
+	setTimeout(() => {
+        res.status(200).json({ message: 'startTest' })
+    }, (getRandomNumber(3, 5)*1000));
 }
 exports.stopTest = (req, res, next) => {
 	console.log('stopTest');
@@ -78,7 +85,9 @@ exports.stopTest = (req, res, next) => {
 		return;
 	}
 
-    res.status(200).json({ message: 'stopTest' })
+	setTimeout(() => {
+        res.status(200).json({ message: 'stopTest' })
+    }, (getRandomNumber(minRange, maxRange)*1000));
 }
 
 // FUNCTIONS
@@ -96,4 +105,8 @@ function getTestById(id) {
 	}
 
 	return DATA_TESTS.find(test => test.id === id);
+}
+
+function getRandomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }

@@ -5,7 +5,7 @@ const auth = require('./auth');
 const ctrl = require('./controller');
 
 // POST
-router.post('/select', ctrl.selectTest);
+// router.post('/select', ctrl.selectTest);
 router.post('/start', ctrl.startTest);
 router.post('/stop', ctrl.stopTest);
 
