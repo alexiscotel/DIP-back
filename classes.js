@@ -1,4 +1,4 @@
-export class DIPTest {
+class DIPTest {
 	id = '';
 	label = '';
 	image = '';
@@ -6,28 +6,29 @@ export class DIPTest {
 	steps = [];
 
 	constructor(id, label, image, logFile = '', steps = []) {
-		console.log('DIPTest');
 		this.id = id;
 		this.label = label;
 		this.image = image;
 		this.logFile = logFile;
-		this.steps = steps;
-	}
-
-	avancer(){
-		console.log('tete');
+		steps?.forEach(elem => {
+			this.steps.push(new DIPTestStep(elem.id, elem.label, elem.commands));
+		});
 	}
 }
 
-export class DIPTestStep {
+class DIPTestStep {
 	id = '';
 	label = '';
 	commands = [];
 
 	constructor(id, label, commands = []) {
-		console.log('DIPTestStep');
 		this.id = id;
 		this.label = label;
 		this.commands = commands;
 	}
 }
+
+module.exports = {
+	DIPTest: DIPTest,
+	DIPTestStep: DIPTestStep,
+  };

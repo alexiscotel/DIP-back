@@ -11,4 +11,6 @@ router.get('/tests/:id', ctrl.getTest);
 router.get('/start/:id', ctrl.startTest);
 router.get('/stop/:id', ctrl.stopTest);
 
+router.post('/listen/', ctrl.listenTest);
+
 module.exports = router;
