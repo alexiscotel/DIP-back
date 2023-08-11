@@ -7,7 +7,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "node server.js",
+    "serve": "nodemon server.js"
   },
   "dependencies": {
 	  "body-parser": "^1.20.2",

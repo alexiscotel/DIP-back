@@ -1,33 +1,20 @@
-export class DIPTest {
+export class Test {
 	id = '';
 	label = '';
 	image = '';
 	logFile = '';
-	steps = [];
+	statusFile = '';
 
-	constructor(id, label, image, logFile = '', steps = []) {
-		console.log('DIPTest');
+	constructor(id, label, image, logFile = '', statusFile = '') {
+		console.log('Test');
 		this.id = id;
 		this.label = label;
 		this.image = image;
 		this.logFile = logFile;
-		this.steps = steps;
+		this.statusFile = statusFile;
 	}
 
 	avancer(){
 		console.log('tete');
-	}
-}
-
-export class DIPTestStep {
-	id = '';
-	label = '';
-	commands = [];
-
-	constructor(id, label, commands = []) {
-		console.log('DIPTestStep');
-		this.id = id;
-		this.label = label;
-		this.commands = commands;
 	}
 }
