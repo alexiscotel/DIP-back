@@ -1,22 +1,22 @@
 {
-  "name": "dip-server",
-  "version": "1.0.0",
-  "description": "",
-  "author": "Alexis",
-  "license": "ISC",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "serve": "nodemon server.js"
-  },
-  "dependencies": {
-	  "body-parser": "^1.20.2",
-	  "express": "^4.18.2",
-	  "bcrypt": "^5.1.0",
-	  "cors": "^2.8.5",
-	  "jsonwebtoken": "^9.0.1",
-    "path": "^0.12.7",
-    "ws": "^8.13.0"
-  }
+	"name": "dip-server",
+	"version": "1.0.0",
+	"description": "",
+	"author": "Alexis",
+	"license": "ISC",
+	"main": "server.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node server.js",
+		"serve": "nodemon server.js"
+	},
+	"dependencies": {
+		"body-parser": "^1.20.2",
+		"express": "^4.18.2",
+		"bcrypt": "^5.1.0",
+		"cors": "^2.8.5",
+		"jsonwebtoken": "^9.0.1",
+		"path": "^0.12.7",
+		"ws": "^8.13.0"
+	}
 }

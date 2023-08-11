@@ -36,6 +36,15 @@ app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 // # < EXPRESS CONFIG
 
+// # > HTTP REQUESTS
+app.get('/', (req, res) => {
+	res.send('Hello World! I have to serve a website here');
+	// res.sendFile(path.join(buildPath, 'index.html'));
+});
+// # < HTTP REQUESTS
+
+
+
 // # > WEBSOCKET CONFIG
 const PORT_WEBSOCKET = 8080;
 let logFileWatcher = null;
@@ -78,10 +87,9 @@ webSocketServer.on('connection', function(websocket) {
 			tests: TESTS,
 		}
 	};
-
 	websocket.send(JSON.stringify(welcomeResponse));
 	// webSocketServer.broadcast(JSON.stringify(welcomeResponse), websocket);
-
+	
 	// On your message callback.
 	websocket.on('message', function(data) {
 		console.log('received: %s', data)
@@ -101,9 +109,12 @@ webSocketServer.on('connection', function(websocket) {
 				// websocket.send(JSON.stringify(parsedData));
 				webSocketServer.broadcast(JSON.stringify(parsedData), websocket);
 				break;
-			case 'logFile':
-				console.log('want logFile content');
+			case 'askLogFile':
+				console.log('ask for logFile content');
 				readLogFile(websocket, parsedData.data.logFile);
+				break;
+			case 'readLogFile':
+				console.log('want readLogFile');
 				break;
 			case 'statusFile':
 				console.log('want statusFile content');
@@ -124,15 +135,36 @@ webSocketServer.on('connection', function(websocket) {
 });
 
 function readLogFile(websocket, filepath) {
-	// READ LOG FILE
+	let readLogFileResponse = {
+		sender: 'server',
+		type:'readLogFile',
+		data: {
+			message: '',
+			status: undefined,
+			error: undefined,
+		}
+	};
 
 	if(!filepath){
 		console.warn('No filepath provided');
+		readLogFileResponse.data.message = 'No filepath provided';
+		readLogFileResponse.data.status = false;
+		websocket.send(JSON.stringify(readLogFileResponse));
 		return;
 	}
+	
 
 	const logFilePath = path.join(__dirname, '/shared/'+filepath);
 	console.log('logFilePath', logFilePath);
+
+	if (!fileSystem.existsSync(logFilePath)) {
+		const msg = 'filepath "'+filepath+'" does not exists'
+		console.error(msg)
+		readLogFileResponse.data.message = msg;
+		readLogFileResponse.data.status = false;
+		websocket.send(JSON.stringify(readLogFileResponse));
+		return;
+	}
 
 	const sendLogUpdates = () => {
 		console.log('sendLogUpdates')
@@ -140,16 +172,16 @@ function readLogFile(websocket, filepath) {
 			console.log('readFile callback')
 			if (err) {
 				console.error('Error reading log file:', err);
+
+				readLogFileResponse.data.message = 'Error reading log file:';
+				readLogFileResponse.data.status = false;
+				readLogFileResponse.data.error = err;
+				websocket.send(JSON.stringify(readLogFileResponse));
 				return;
 			}
 
-			const response = {
-				sender: 'server',
-				type:'logFile',
-				data: data
-			};
-
-			websocket.send(JSON.stringify(response)); // Envoie les données du fichier de log au client WebSocket
+			readLogFileResponse.data = data;
+			websocket.send(JSON.stringify(readLogFileResponse)); // Envoie les données du fichier de log au client WebSocket
 		});
 	};
 	if(logFileWatcher){
@@ -161,22 +193,6 @@ function readLogFile(websocket, filepath) {
 	sendLogUpdates(); // Envoie les données du fichier de log lors de la première connexion
 }
 // # < WEBSOCKET SERVER
-
-
-// HTTP REQUESTS
-app.get('/', (req, res) => {
-	res.send('Hello World! I have to serve a website here');
-	res.sendFile(path.join(buildPath, 'index.html'));
-});
-
-app.get('/tests', (req, res) => {
-	console.log('get tests');
-	res.status(200).json(TESTS)
-});
-app.get('/test/:id', (req, res) => {
-	console.log('get test with id'+req.params.id);
-	res.status(200).json('send test with id'+req.params.id)
-});
 
 
 module.exports = app;
