@@ -39,13 +39,60 @@ exports.startTest = (req, res, next) => {
 
 	const {status, message} = listenDIPTest(DIPTest);
 	if(!status) {
-		res.status(500).json({message: message});
+		res.write("après traitement 1 KO");
+		// res.status(500).json({message: message});
 	}else{
-		res.status(200).json({message: message})
+		res.write("après traitement 1 OK");
+		// res.status(200).json({message: message})
 	}
 
-	// TODO: continue with commands execution = executeTestCommands(DIPTest);
-	// TODO: find a way to get commands execution logs
+	// console.log('DIPTest', DIPTest);
+
+	// console.log('continue with commands execution');
+	// next()
+	// // res.status(200).json({message: 'continue with commands execution'});
+
+
+	// // TODO: continue with commands execution = executeTestCommands(DIPTest);
+	// // TODO: find a way to get commands execution logs
+	executeTestSteps(DIPTest).then((result) => {
+		console.log('executeTestCommands then', result);
+		res.write("après traitement 2 OK");
+	}).catch((error) => {
+		console.log('executeTestCommands catch', error);
+		res.write("après traitement 2 KO");
+	});
+
+	res.end();
+
+	// // const steps = DIPTest.steps;
+	// // if(!steps) {
+	// // 	console.error('steps is undefined')
+	// // 	// res.status(404).json({status: false, message: 'steps is undefined'});
+	// // 	res.write('steps is undefined');
+	// // }
+	// // if(steps.length === 0) {
+	// // 	console.error('steps is empty')
+	// // 	// res.status(404).json({status: false, message: 'steps is empty'});
+	// // 	res.write('steps is empty')
+	// // }
+
+
+	
+	// // for (const step of steps) {
+	// // 	try {
+	// // 		executeStep(step).then((result) => {
+	// // 			console.log('executeStep then :', result);
+	// // 			res.status(200).json({message: 'executeStep success'});
+	// // 		}).catch((error) => {
+	// // 			console.log('executeStep catche error :', error);
+	// // 			res.status(500).json({message: 'executeStep catch error'});
+	// // 		});
+	// // 	} catch (error) {
+	// // 		console.error('executeStep try catch error', error);
+	// // 		res.status(500).json({message: 'executeStep try catch error'});
+	// // 	}
+	// // }
 }
 
 
@@ -194,41 +241,75 @@ function InstanciateWebSocketServer() {
 }
 
 
-async function executeTestCommands(DIPTest) {
+async function executeTestSteps(DIPTest) {
 	if(!DIPTest) {
 		console.error('DIPTest is undefined')
 		return {status: false, message: 'DIPTest is undefined'};
 	}
 
-	const commands = DIPTest.commands;
+	const steps = DIPTest.steps;
+
+	if(!steps) {
+		console.error('steps is undefined')
+		return {status: false, message: 'steps is undefined'};
+	}
+	if(steps.length === 0) {
+		console.error('steps is empty')
+		return {status: false, message: 'steps is empty'};
+	}
+	
+	for (const step of steps) {
+		try {
+			let {status, message} = await executeStep(step);
+			console.log('executeStep', status, message);
+		} catch (error) {
+			console.error('executeStep', error);
+			return {status: false, message: error};
+		}
+	}
+}
+
+async function executeStep(DIPTestStep) {
+
+	if(!DIPTestStep) {
+		console.error('DIPTestStep is undefined')
+		return {status: false, message: 'DIPTestStep is undefined'};
+	}
+	const commands = DIPTestStep.commands;
 	if(!commands) {
 		console.error('commands is undefined')
 		return {status: false, message: 'commands is undefined'};
 	}
-
 	if(commands.length === 0) {
 		console.error('commands is empty')
 		return {status: false, message: 'commands is empty'};
 	}
 
-	await executeCommands(commands);
-}
-async function executeCommands(commands) {
-
-    for (const command of commands) {
+	for (const command of commands) {
         try {
             const { stdout, stderr } = await executeCommand(command);
-            console.log('Sortie de la commande :');
-            console.log(stdout);
+            console.log('Sortie de la commande :', stdout);
             if (stderr) {
-                console.error(`Erreur de sortie standard d'erreur : ${stderr}`);
+                console.error(`Sortie standard d'erreur : ${stderr}`);
+				
             }
+			// TODO: send stdout to websocket
+			if(stdout){
+				// websocketInstance.clients.forEach((socket) => {
+				// 	if ([socket.OPEN, socket.CLOSING].includes(socket.readyState)) {
+				// 		socket.send(JSON.stringify(stdout));
+				// 	}
+				// });
+			}
         } catch (error) {
             console.error(`Erreur lors de l'exécution de la commande "${command}" : ${error}`);
         }
     }
+	return {status: true, message: 'executeStep ('+DIPTestStep.id+') OK'};
+
 }
-function executeCommand(command) {
+
+async function executeCommand(command) {
     return new Promise((resolve, reject) => {
         exec(command, (error, stdout, stderr) => {
             if (error) {

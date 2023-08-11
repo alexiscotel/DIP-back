@@ -3,13 +3,38 @@ const DATA_TESTS = [
 		id: 'test-1', 
 		label: 'TEST 1',
 		image: 'assets/dip.png',
-		logFile: 'test1.log',
+		logFile: 'test1.log', // date;test-id;step-id;command-id;'info'|'debug'|'warn'|'err';logTrace
+		statusFile: 'status1.json', // status: number = < 0: error, 0: pending, > 0: success
+		/** contenu du fichier de status (status1.json)
+		 * {
+		 * tests: [
+		 * {
+		 * 	id: 'id-test-1', 
+		 * 	status: < 0: arreté, 0: pause, > 0: démaré
+		 * 	progress: 10,
+		*   steps :[
+			"id-step-1": [
+		* 		{id: 'id-cmd-1', status: 1},
+		* 		{id: 'id-cmd-2', , status: -1},
+		* 		{id: 'id-cmd-3', , status: 0},
+		*   ],
+		    "id-step-2": [
+		* 		{id: 'id-cmd-1', status: 1},
+		* 		{id: 'id-cmd-2', , status: -1},
+		* 		{id: 'id-cmd-3', , status: 0},
+		*   ]
+		]
+		 * },
+		 * 	
+		 * }
+		 */
 		steps: [
 			{
 				id: 1,
 				label: 'Step 1',
 				commands: [
-					'echo "command 1.1"',
+					{id: 1, command: 'echo "command 1.1"', poidPercent: 10},
+					'echo "command 1.1" >> test1.log',
 					'echo "command 1.2"',
 					'echo "command 1.3"',
 				]
