@@ -6,17 +6,8 @@ const WebSocket = require('ws');
 const DATA_TESTS = require("./data");
 const { DIPTest, DIPTestStep } = require('./classes');
 
-const connectedClients = new Set();
-let logFileWatcher = null;
 
 let websocketInstance = new WebSocket.Server({ port: 8080 });
-// websocketInstance.on('request', (websocket) => {
-// 	console.log('new WebSocket request');
-
-// 	// websocket.accept();
-// });
-let currentResponse = null
-
 websocketInstance.on('connection', (websocket) => {
 	console.log('new WebSocket connection established');
 	connectedClients.add(websocket);

@@ -4,10 +4,10 @@
   "description": "",
   "author": "Alexis",
   "license": "ISC",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "nodemon index.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
