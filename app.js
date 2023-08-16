@@ -4,15 +4,12 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const fileSystem = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 const WebSocket = require('ws');
 // # < IMPORTS
 
 // # > CONFIG FILES
-const CONF = require("./files/conf.json");
-const TESTS = require("./files/tests.json");
-const STATUS = require("./files/status.json");
-const IO = require("./files/io.json");
+const CONF = require("./public/files/conf.json");
+const TESTS = require("./public/files/tests.json");
 // # < CONFIG FILES
 
 // # > EXPRESS CONFIG
@@ -21,9 +18,7 @@ app.use(cors());
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
@@ -48,6 +43,7 @@ app.get('/', (req, res) => {
 // # > WEBSOCKET CONFIG
 const PORT_WEBSOCKET = 8080;
 let logFileWatcher = null;
+let statusFileWatcher = null;
 // # < WEBSOCKET CONFIG
 
 // # > WEBSOCKET SERVER
@@ -65,16 +61,8 @@ webSocketServer.broadcast = function(data, sender) {
 		}
 	})
 }
-let CLIENTS=[];
-let CLIENTSIDS=[];
-let id;
 webSocketServer.on('connection', function(websocket) {
 	console.log('new WebSocket connection established');
-
-	id = Math.random();
-	CLIENTS[id] = websocket;
-	CLIENTS.push(websocket);
-	console.log('user ' + id + ' joined chat')
 
 	// console.log(TESTS);
 
@@ -102,11 +90,9 @@ webSocketServer.on('connection', function(websocket) {
 		switch(parsedData.type) {
 			case 'join':
 				console.log('join received');
-				// websocket.send(JSON.stringify(parsedData));
 				break;
 			case 'message':
 				console.log('message received');
-				// websocket.send(JSON.stringify(parsedData));
 				webSocketServer.broadcast(JSON.stringify(parsedData), websocket);
 				break;
 			case 'askLogFile':
@@ -116,8 +102,9 @@ webSocketServer.on('connection', function(websocket) {
 			case 'readLogFile':
 				console.log('want readLogFile');
 				break;
-			case 'statusFile':
+			case 'askStatusFile':
 				console.log('want statusFile content');
+				readStatusFile(websocket, parsedData.data.statusFile);
 				break;
 			case 'ioFile':
 				console.log('want ioFile content');
@@ -154,7 +141,7 @@ function readLogFile(websocket, filepath) {
 	}
 	
 
-	const logFilePath = path.join(__dirname, '/shared/'+filepath);
+	const logFilePath = path.join(__dirname, '/public/'+filepath);
 	console.log('logFilePath', logFilePath);
 
 	if (!fileSystem.existsSync(logFilePath)) {
@@ -169,7 +156,7 @@ function readLogFile(websocket, filepath) {
 	const sendLogUpdates = () => {
 		console.log('sendLogUpdates')
 		fileSystem.readFile(logFilePath, 'utf8', (err, data) => {
-			console.log('readFile callback')
+			console.log('sendLogUpdates callback')
 			if (err) {
 				console.error('Error reading log file:', err);
 
@@ -181,7 +168,7 @@ function readLogFile(websocket, filepath) {
 			}
 
 			readLogFileResponse.data = data;
-			websocket.send(JSON.stringify(readLogFileResponse)); // Envoie les données du fichier de log au client WebSocket
+			websocket.send(JSON.stringify(readLogFileResponse));
 		});
 	};
 	if(logFileWatcher){
@@ -190,7 +177,67 @@ function readLogFile(websocket, filepath) {
 		logFileWatcher = null;
 	}
 	logFileWatcher = fileSystem.watch(logFilePath, sendLogUpdates);
-	sendLogUpdates(); // Envoie les données du fichier de log lors de la première connexion
+	sendLogUpdates();
+}
+
+
+function readStatusFile(websocket, filepath) {
+	let readStatusFileResponse = {
+		sender: 'server',
+		type:'readStatusFile',
+		data: {
+			message: '',
+			status: undefined,
+			error: undefined,
+		}
+	};
+
+	if(!filepath){
+		console.warn('No filepath provided');
+		readStatusFileResponse.data.message = 'No filepath provided';
+		readStatusFileResponse.data.status = false;
+		websocket.send(JSON.stringify(readStatusFileResponse));
+		return;
+	}
+	
+
+	const filePath = path.join(__dirname, '/public/'+filepath);
+	console.log('statusFilePath', filePath);
+
+	if (!fileSystem.existsSync(filePath)) {
+		const msg = 'filepath "'+filepath+'" does not exists'
+		console.error(msg)
+		readStatusFileResponse.data.message = msg;
+		readStatusFileResponse.data.status = false;
+		websocket.send(JSON.stringify(readStatusFileResponse));
+		return;
+	}
+
+	const sendStatusUpdates = () => {
+		console.log('sendStatusUpdates')
+		fileSystem.readFile(filePath, 'utf8', (err, data) => {
+			console.log('sendStatusUpdates callback')
+			if (err) {
+				console.error('Error reading status file:', err);
+
+				readStatusFileResponse.data.message = 'Error reading status file:';
+				readStatusFileResponse.data.status = false;
+				readStatusFileResponse.data.error = err;
+				websocket.send(JSON.stringify(readStatusFileResponse));
+				return;
+			}
+
+			readStatusFileResponse.data = data;
+			websocket.send(JSON.stringify(readStatusFileResponse));
+		});
+	};
+	if(statusFileWatcher){
+		console.warn('statusFileWatcher already used. Stoping it ...')
+		statusFileWatcher.close();
+		statusFileWatcher = null;
+	}
+	statusFileWatcher = fileSystem.watch(filePath, sendStatusUpdates);
+	sendStatusUpdates();
 }
 // # < WEBSOCKET SERVER
 

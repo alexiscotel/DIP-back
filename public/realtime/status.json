@@ -1,0 +1,26 @@
+[
+	{
+		"id": "id-test-1",
+		"status": "0",
+		"progress": 10,
+		"steps" : [
+			{"key": "id-step-1", "values": [
+				{"id": "id-cmd-1", "status": "1"},
+				{"id": "id-cmd-2", "status": "-1"},
+				{"id": "id-cmd-3", "status": "0"}
+			]}
+		]
+	},
+	{
+		"id": "id-test-2",
+		"status": "0",
+		"progress": 10,
+		"steps" : [
+			{"key": "id-step-2", "values": [
+				{"id": "id-cmd-1", "status": "1"},
+				{"id": "id-cmd-2", "status": "-1"},
+				{"id": "id-cmd-3", "status": "0"}
+			]}
+		]
+	}
+]

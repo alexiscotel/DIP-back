@@ -1,0 +1,23 @@
+[
+	{
+		"id": "test-1",
+		"label": "TEST 1",
+		"image": "assets/dip.png",
+		"logFile": "shared/test1.log",
+		"statusFile": "realtime/status1.json"
+	},
+	{
+		"id": "test-2",
+		"label": "TEST 2",
+		"image": "assets/dip2.png",
+		"logFile": "shared/test2.log",
+		"statusFile": "realtime/status2.json"
+	},
+    {
+		"id": "test-3",
+		"label": "TEST 3",
+		"image": "assets/dip3.png",
+		"logFile": "shared/test3.log",
+		"statusFile": "realtime/status3.json"
+	}
+]

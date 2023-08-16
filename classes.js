@@ -13,8 +13,4 @@ export class Test {
 		this.logFile = logFile;
 		this.statusFile = statusFile;
 	}
-
-	avancer(){
-		console.log('tete');
-	}
 }
