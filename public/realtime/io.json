@@ -1,6 +1,11 @@
 {
-	"UID": "",
-	"MAC": "",
+	"UID": "XXXXXXXXXXXXXXXX",
+	"MAC": "XX-XX-XX-XX-XX-XX",
+	"IP": "XXX.XXX.XXX.XXX",
+	"firmware": "1.0.0",
+	"hardware": "1.0.0",
+	"model": "1.0.0",
+	"manufacturer": "DeltaDore",
 	"inputs": {
 		"i1": "1",
 		"i2": "0"

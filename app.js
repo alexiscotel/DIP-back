@@ -44,27 +44,15 @@ app.get('/', (req, res) => {
 const PORT_WEBSOCKET = 8080;
 let logFileWatcher = null;
 let statusFileWatcher = null;
+let ioFileWatcher = null;
 // # < WEBSOCKET CONFIG
 
 // # > WEBSOCKET SERVER
 const webSocketServer = new WebSocket.Server({ port: PORT_WEBSOCKET });
 console.log('WebSocket server listening on port ' + PORT_WEBSOCKET);
-/*
-* method: broadcast
-* @data: the data you wanna send
-* @sender: which client/ws/socket is sending
-*/
-webSocketServer.broadcast = function(data, sender) {
-	webSocketServer.clients.forEach(function(client) {
-		if (client !== sender) {
-			client.send(data)
-		}
-	})
-}
+
 webSocketServer.on('connection', function(websocket) {
 	console.log('new WebSocket connection established');
-
-	// console.log(TESTS);
 
 	const welcomeResponse = {
 		sender: 'server',
@@ -99,16 +87,22 @@ webSocketServer.on('connection', function(websocket) {
 				console.log('ask for logFile content');
 				readLogFile(websocket, parsedData.data.logFile);
 				break;
-			case 'readLogFile':
-				console.log('want readLogFile');
-				break;
 			case 'askStatusFile':
 				console.log('want statusFile content');
 				readStatusFile(websocket, parsedData.data.statusFile);
 				break;
-			case 'ioFile':
+			case 'askIoFile':
 				console.log('want ioFile content');
+				readIoFile(websocket, parsedData.data.ioFile);
 				break;
+			case 'execTest': 
+				console.log('want to exec test');
+				// const scripts = 'start'| 'stop' | 'pause';
+
+				// // exec conf[scripts]
+
+				break;
+			
 			default:
 				console.log('unknown message received');
 				break;
@@ -122,7 +116,7 @@ webSocketServer.on('connection', function(websocket) {
 });
 
 function readLogFile(websocket, filepath) {
-	let readLogFileResponse = {
+	let response = {
 		sender: 'server',
 		type:'readLogFile',
 		data: {
@@ -134,9 +128,9 @@ function readLogFile(websocket, filepath) {
 
 	if(!filepath){
 		console.warn('No filepath provided');
-		readLogFileResponse.data.message = 'No filepath provided';
-		readLogFileResponse.data.status = false;
-		websocket.send(JSON.stringify(readLogFileResponse));
+		response.data.message = 'No filepath provided';
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
 		return;
 	}
 	
@@ -147,9 +141,9 @@ function readLogFile(websocket, filepath) {
 	if (!fileSystem.existsSync(logFilePath)) {
 		const msg = 'filepath "'+filepath+'" does not exists'
 		console.error(msg)
-		readLogFileResponse.data.message = msg;
-		readLogFileResponse.data.status = false;
-		websocket.send(JSON.stringify(readLogFileResponse));
+		response.data.message = msg;
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
 		return;
 	}
 
@@ -160,15 +154,15 @@ function readLogFile(websocket, filepath) {
 			if (err) {
 				console.error('Error reading log file:', err);
 
-				readLogFileResponse.data.message = 'Error reading log file:';
-				readLogFileResponse.data.status = false;
-				readLogFileResponse.data.error = err;
-				websocket.send(JSON.stringify(readLogFileResponse));
+				response.data.message = 'Error reading log file:';
+				response.data.status = false;
+				response.data.error = err;
+				websocket.send(JSON.stringify(response));
 				return;
 			}
 
-			readLogFileResponse.data = data;
-			websocket.send(JSON.stringify(readLogFileResponse));
+			response.data = data;
+			websocket.send(JSON.stringify(response));
 		});
 	};
 	if(logFileWatcher){
@@ -182,7 +176,7 @@ function readLogFile(websocket, filepath) {
 
 
 function readStatusFile(websocket, filepath) {
-	let readStatusFileResponse = {
+	let response = {
 		sender: 'server',
 		type:'readStatusFile',
 		data: {
@@ -194,9 +188,9 @@ function readStatusFile(websocket, filepath) {
 
 	if(!filepath){
 		console.warn('No filepath provided');
-		readStatusFileResponse.data.message = 'No filepath provided';
-		readStatusFileResponse.data.status = false;
-		websocket.send(JSON.stringify(readStatusFileResponse));
+		response.data.message = 'No filepath provided';
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
 		return;
 	}
 	
@@ -207,9 +201,9 @@ function readStatusFile(websocket, filepath) {
 	if (!fileSystem.existsSync(filePath)) {
 		const msg = 'filepath "'+filepath+'" does not exists'
 		console.error(msg)
-		readStatusFileResponse.data.message = msg;
-		readStatusFileResponse.data.status = false;
-		websocket.send(JSON.stringify(readStatusFileResponse));
+		response.data.message = msg;
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
 		return;
 	}
 
@@ -220,15 +214,15 @@ function readStatusFile(websocket, filepath) {
 			if (err) {
 				console.error('Error reading status file:', err);
 
-				readStatusFileResponse.data.message = 'Error reading status file:';
-				readStatusFileResponse.data.status = false;
-				readStatusFileResponse.data.error = err;
-				websocket.send(JSON.stringify(readStatusFileResponse));
+				response.data.message = 'Error reading status file:';
+				response.data.status = false;
+				response.data.error = err;
+				websocket.send(JSON.stringify(response));
 				return;
 			}
 
-			readStatusFileResponse.data = data;
-			websocket.send(JSON.stringify(readStatusFileResponse));
+			response.data = data;
+			websocket.send(JSON.stringify(response));
 		});
 	};
 	if(statusFileWatcher){
@@ -238,6 +232,66 @@ function readStatusFile(websocket, filepath) {
 	}
 	statusFileWatcher = fileSystem.watch(filePath, sendStatusUpdates);
 	sendStatusUpdates();
+}
+
+
+function readIoFile(websocket, filepath) {
+	let response = {
+		sender: 'server',
+		type:'readIoFile',
+		data: {
+			message: '',
+			status: undefined,
+			error: undefined,
+		}
+	};
+
+	if(!filepath){
+		console.warn('No filepath provided');
+		response.data.message = 'No filepath provided';
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
+		return;
+	}
+	
+
+	const filePath = path.join(__dirname, '/public/'+filepath);
+	console.log('ioFilePath', filePath);
+
+	if (!fileSystem.existsSync(filePath)) {
+		const msg = 'filepath "'+filepath+'" does not exists'
+		console.error(msg)
+		response.data.message = msg;
+		response.data.status = false;
+		websocket.send(JSON.stringify(response));
+		return;
+	}
+
+	const sendIoUpdates = () => {
+		console.log('sendIoUpdates')
+		fileSystem.readFile(filePath, 'utf8', (err, data) => {
+			console.log('sendIoUpdates callback')
+			if (err) {
+				console.error('Error reading IO file:', err);
+
+				response.data.message = 'Error reading IO file:';
+				response.data.status = false;
+				response.data.error = err;
+				websocket.send(JSON.stringify(response));
+				return;
+			}
+
+			response.data = data;
+			websocket.send(JSON.stringify(response));
+		});
+	};
+	if(ioFileWatcher){
+		console.warn('ioFileWatcher already used. Stoping it ...')
+		ioFileWatcher.close();
+		ioFileWatcher = null;
+	}
+	ioFileWatcher = fileSystem.watch(filePath, sendIoUpdates);
+	sendIoUpdates();
 }
 // # < WEBSOCKET SERVER
 

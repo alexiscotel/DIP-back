@@ -4,20 +4,21 @@
 	"progress": 10,
 	"steps" : [
 		{
-			"key": "id-step-1",
-			"values": [
-				{"id": "id-cmd-1"},
-				{"id": "id-cmd-2"},
-				{"id": "id-cmd-3"}
+			"label": "id-step-1",
+			"status": 1,
+			"commands": [
+				{"label": "id-cmd-1"},
+				{"label": "id-cmd-2"},
+				{"label": "id-cmd-3"}
 			]
 		},
 		{
-			"key": "id-step-2", 
+			"label": "id-step-2", 
 			"status": 0, 
-			"values": [
-				{"id": "id-cmd-1", "status": 1},
-				{"id": "id-cmd-2", "status": -1},
-				{"id": "id-cmd-3", "status": 0}
+			"commands": [
+				{"label": "id-cmd-1", "status": 1},
+				{"label": "id-cmd-2", "status": -1},
+				{"label": "id-cmd-3", "status": 0}
 			]
 		}
 	]
