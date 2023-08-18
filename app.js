@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const fileSystem = require('fs');
 const path = require('path');
 const WebSocket = require('ws');
+// const exec = require('child_process').exec;
+const { exec } = require("child_process");
 // # < IMPORTS
 
 // # > CONFIG FILES
@@ -32,6 +34,8 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 // # < EXPRESS CONFIG
 
 // # > HTTP REQUESTS
+
+
 app.get('/', (req, res) => {
 	res.send('Hello World! I have to serve a website here');
 	// res.sendFile(path.join(buildPath, 'index.html'));
@@ -96,13 +100,12 @@ webSocketServer.on('connection', function(websocket) {
 				readIoFile(websocket, parsedData.data.ioFile);
 				break;
 			case 'execTest': 
-				console.log('want to exec test');
-				// const scripts = 'start'| 'stop' | 'pause';
-
-				// // exec conf[scripts]
-
+				executeTest(websocket, parsedData);
 				break;
-			
+			case 'testExecuted':
+				console.log('test executed', parsedData);
+				
+				break;
 			default:
 				console.log('unknown message received');
 				break;
@@ -292,6 +295,61 @@ function readIoFile(websocket, filepath) {
 	}
 	ioFileWatcher = fileSystem.watch(filePath, sendIoUpdates);
 	sendIoUpdates();
+}
+
+function executeTest(websocket, parsedData) {
+	console.log('want to exec test', parsedData);
+	const action = parsedData.data.action;
+	const test = parsedData.data.test
+
+	if(!test || !test.scripts || !test.scripts[action]) {
+		console.error('no test or no script found');
+		return;
+	}
+	const cmd = test.scripts[action]
+	if(!cmd) {
+		console.error('no script found');
+		return;
+	}
+
+	// const execOptions = {
+	// 	// cwd: path.join(__dirname, '/public/'+test.path),
+	// 	cwd: path.join(__dirname, '/public/'),
+	// 	shell: '/bin/bash',
+	// };
+
+	console.log('cmd', cmd);
+
+	// exec("ls -la", (error, stdout, stderr) => {
+	exec(`${cmd}`, (error, stdout, stderr) => {
+		const response = {
+			sender: 'server',
+			type:'testExecuted',
+			data: {}
+		};
+
+		if (error) {
+			console.log(`error: ${error.message}`);
+			response.data.status = 'error';
+			response.data.error = error;
+			response.data.message = error.message;
+			websocket.send(JSON.stringify(response));
+			return;
+		}
+		if (stderr) {
+			console.log(`stderr: ${stderr}`);
+			response.data.status = 'stderr';
+			response.data.stderr = stderr;
+			// response.data.message = stderr;
+			websocket.send(JSON.stringify(response));
+			return;
+		}
+		// console.log(`stdout: ${stdout}`);
+		response.data.status = 'success';
+		response.data.stdout = stdout;
+		// response.data.message = stdout;
+		websocket.send(JSON.stringify(response));
+	});
 }
 // # < WEBSOCKET SERVER
 

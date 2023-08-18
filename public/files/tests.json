@@ -7,7 +7,7 @@
 		"ioFile": "realtime/io.json",
 		"statusFile": "realtime/status1.json",
 		"scripts": {
-			"start": "realtime/bin1 start",
+			"start": "ls -la",
 			"stop": "realtime/bin1 stop",
 			"pause": "realtime/bin1 pause",
 			"resume": "realtime/bin1 resume"

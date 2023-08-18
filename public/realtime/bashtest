@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "exec bin with parameter: $1"
